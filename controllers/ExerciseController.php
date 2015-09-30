@@ -6,12 +6,13 @@ use Yii;
 use yii\web\Controller;
 use yii\data\Pagination;
 use app\models\Vocabulary;
+use app\models\Trainings;
 use app\models\Users;
 
 class ExerciseController extends Controller
 {
     //hardcoded Id for one user
-    public $userId = 1;
+    private static $userId = 1;
 
     public function beforeAction($action) {
         if ($this->action->id == 'ajaxextension') {
@@ -20,48 +21,25 @@ class ExerciseController extends Controller
         return true;
     }
 
+    //function used for old way of geeting words from vocabulary
     private function getWordsForTraining($training)
     {
          //getting batch of russian words
         $words = (new \yii\db\Query())
-            ->select(['wordTranslate', 'translateWord', 'typeWord', 'flashCards'])
-            ->from('users')
-            ->where(['userId' => $this->userId])
+            ->select(['wordId'])
+            ->from('trainings')
+            ->where([
+                'userId' => ExerciseController::$userId,
+                (string)$training => 1
+            ])
             ->all();
+       // return $words;
 
-        foreach ($words as $word){
-            foreach ($word as $key => $value){
-                switch ($key) {
-                    case "wordTranslate":
-                        $resultArray['wordTranslate'] = explode("|",substr($value, 1, -1));
-                    case "translateWord":
-                        $resultArray['translateWord'] = explode("|",substr($value, 1, -1));
-                    case "typeWord":
-                        $resultArray['typeWord'] = explode("|",substr($value, 1, -1));
-                    case "flashCards":
-                        $resultArray['flashCards'] = explode("|",substr($value, 1, -1));
-                }
-            }
-        }
-        switch ($training) {
-            case "wordTranslate":
-                return $resultArray['wordTranslate'];
-                break;
-            case "translateWord":
-                return $resultArray['translateWord'];
-                break;
-            case "typeWord":
-                return $resultArray['typeWord'];
-                break;
-            case "flashCards":
-                return $resultArray['flashCards'];
-                break;
-            case "all":
-                return $resultArray;
-                break;
-            default:
-                return $resultArray;
-        }
+        $resultArray = [];
+        foreach ($words as $word)
+            $resultArray[] = $word['wordId'];
+
+        return $resultArray;
     }
 
     public function actionIndex()
@@ -128,25 +106,17 @@ class ExerciseController extends Controller
 
     public function actionAjaxx()
     {
-        if ((Yii::$app->request->isAjax) && ($_POST <> null)) {
-            $words = (new \yii\db\Query())
-                ->select([$_POST['type']])
-                ->from('users')
-                ->where(['userId' => $this->userId])
-                ->one();
-
-            foreach ($_POST['ajaxData'] as $key=> $value){
-                if (strpos($words[$_POST['type']], "|$key|")){
-                    $words[$_POST['type']] = str_replace("|$key|", "|", $words[$_POST{'type'}]);
-                }
+        if ((Yii::$app->request->isAjax) && ($_POST <> null))
+        {
+            foreach ($_POST['ajaxData'] as $key => $value)
+            {
+                if ($value == 0)
+                    \Yii::$app->db->createCommand()->update('trainings', ['wordId' => $key], $_POST['type'] . "== 0")->execute();
             }
 
-            $wordsModel = Users::findOne($this->userId);
-            $wordsModel->typeWord = $words['typeWord'];
-            if ($wordsModel->update()){
-                echo 'ok';
-            } else echo 'your session has not been saved. Please try again';
-        } else echo 'your session has not been saved. Please try again';
+
+        } else
+            echo 'your session has not been saved. Please try again';
     }
 
     public function actionWordtranslate()
@@ -259,6 +229,7 @@ class ExerciseController extends Controller
             'wordsToType' => $wordsToType
         ]);
     }
+
     public function actionTranslation()
     {
         $query = Vocabulary::find();

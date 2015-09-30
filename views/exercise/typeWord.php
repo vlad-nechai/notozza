@@ -2,6 +2,7 @@
 /* @var $this yii\web\View */
 use yii\helpers\Html;
 use yii\helpers\Url;
+use yii\widgets\DetailView;
 ?>
 
 <?php $this->beginPage() ?>
@@ -29,14 +30,15 @@ use yii\helpers\Url;
         <span>/</span>
         <span><?php echo count($wordsToType) ?><span/>
     </div>
+
     <div class="general-block">
+
         <div class="word-container">
             <span></span>
             <div class="character-container"></div>
         </div>
 
         <div class="input-container">
-            <input type="text" id="answer" name="answer" value="">
             <div id="answerContainer"><span></span></div>
             <button type="button" class="exercise-button">I don't know</button>
         </div>
@@ -44,7 +46,9 @@ use yii\helpers\Url;
         <div class="content-container">
             <p class="content"></p>
         </div>
+
     </div>
+
 </div>
 <script>
     function wordType(data)
@@ -55,18 +59,22 @@ use yii\helpers\Url;
         this.type = 'typeWord';
         this.resultData = {};
         this.csrfToken = '<?= Yii::$app->request->csrfToken; ?>';
-        this.init = function(){
+        this.init = function()
+        {
             this.renderData();
         };
-        this.renderData = function(){
+        this.renderData = function()
+        {
             //clear previous data
-            if (!$('.character-container').is(':empty')) {
-                $('.character-container input').remove();
-                $('.character-container div').remove();
-                $('#answer').val('');
-            }
+            $('#answerContainer span').text('');
+            //rendering content
+            $(".content-container > p.content").text('');
 
-            $('#answer').val('');
+            if (!$('.character-container').is(':empty'))
+            {
+                $('.character-container div').remove();
+                $('#answerContainer span').text('');
+            }
 
             //rendering the word
             document.querySelector(".word-container > span").innerText = this.data[this.wordIndex].russian;
@@ -78,103 +86,111 @@ use yii\helpers\Url;
             $('#currentProgress').empty();
             $('#currentProgress').text(this.wordIndex + 1);
 
-            //logging results
-            console.log(word);
-
             //shuffle array
             var entryArray = this.shuffleArray(word.split(""));
-            for (i = 0; i < entryArray.length; i++){
-                $('<input>',
-                        {
-                            'class':'input-character-element',
-                            'style':'cursor:pointer;font-weight:bold;',
-                            'value':entryArray[i]
-                        }
-                    ).appendTo('.character-container');
+            for (i = 0; i < entryArray.length; i++)
+            {
                 $('<div>',
                     {
-                        'class':'div,-character-element',
+                        'class':'character-element',
                         'style':'cursor:pointer;font-weight:bold;',
                         'html':"<span>" + entryArray[i] + "</span>",
                     }
                 ).appendTo('.character-container');
             }
-
-            //rendering content
-            document.querySelector(".content-container > p.content").innerText = this.data[this.wordIndex].context;
-
         };
         this.submitDataClick = function() {
-//            $('.character-container input').click(function(){
-//                var characterAnswer = $(this).val();
-//                var inputAnswer = $('#answer').val();
-//                var correctAnswer = self.data[self.wordIndex].german;
-//                var answerLength = inputAnswer.length + 1;
-//
-//
-//                if (inputAnswer.concat(characterAnswer) == correctAnswer.slice(0, answerLength)) {
-//                    $('#answer').val(inputAnswer.concat(characterAnswer));
-//                    $(this).hide();
-//                    if ($('#answer').val() == self.data[self.wordIndex].german) {
-//                        $('.exercise-button').html('Next');
-//                    }
-//                } else {
-//                    self.resultData[self.data[self.wordIndex].wordId] = 0;
-//                    console.log(self.resultData);
-//                }
-//            });
+            $('.character-container div').click(function()
+            {
+                var characterAnswer = $(this).first('span').text();
+                var inputAnswer = $('#answerContainer span').text();
+                var correctAnswer = self.data[self.wordIndex].german;
+                var answerLength = inputAnswer.length + 1;
+
+                if (inputAnswer.concat(characterAnswer) == correctAnswer.slice(0, answerLength))
+                {
+                    $('#answerContainer span').text(inputAnswer.concat(characterAnswer));
+                    $(this).remove();
+                    if ($('#answerContainer span').text() == self.data[self.wordIndex].german)
+                    {
+                        $('.exercise-button').html('Next');
+                    }
+                }
+                else
+                {
+                    self.resultData[self.data[self.wordIndex].wordId] = 0;
+                    console.log(self.resultData);
+                }
+            });
         };
         this.submitDataKey = function()
         {
                 $(document).keypress(function(e) {
                     var character = String.fromCharCode(e.which);
                     var answer = '';
-                    var characterIndex = $('#answer').val().length;
-                    $('.character-container input').each(function() {
-                       answer += $(this).val();
+                    var characterIndex = $('#answerContainer span').text().length;
+                    $('.character-container div span').each(function()
+                    {
+                        answer += $(this).text();
                     });
 
-                    if (answer.indexOf(character) > -1) {
-                        if (character == self.data[self.wordIndex].german[characterIndex]){
-                            $('#answer').val($('#answer').val() + character);
-                            $('.character-container input:eq(' + answer.indexOf(character) + ')').remove();
+                    if (answer.indexOf(character) > -1)
+                    {
+                        if (character == self.data[self.wordIndex].german[characterIndex])
+                        {
+                            //displaying correct character
+                            $('#answerContainer span').text($('#answerContainer span').text() + character);
 
-                        } else {
+                            //visual effects
+
+                            //removing the character
+                            $('.character-container div:eq(' + answer.indexOf(character) + ')').remove();
+
+                        }
+                        else
+                        {
+                            //registering wrong answer
                             self.resultData[self.data[self.wordIndex].wordId] = 0;
-                            console.log(self.resultData);
+
+                            //visual effects
                         }
                     }
                 });
         };
         this.changeWord = function(){
             $('.exercise-button').click(function(){
-                if ($('#answer').val() == self.data[self.wordIndex].german){
+                if ($('#answerContainer span').text() == self.data[self.wordIndex].german)
+                {
                     self.resultData[self.data[self.wordIndex].wordId] = 1;
-
-                    console.log(self.resultData);
                     self.wordIndex++;
 
-                    if (self.wordIndex >= self.data.length) {
+                    if (self.wordIndex >= self.data.length)
+                    {
                         alert('You have practiced all the words in the session');
                         self.ajaxPassResultData();
-                        //window.location = "/exercise/typeword";
-                    } else self.renderData();
-
-
-                } else {
-                    $('#answer').val(self.data[self.wordIndex].german);
-                    $('.character-container input').remove();
+                    } else
+                        self.renderData();
+                }
+                else
+                {
+                    $('#answerContainer span').text(self.data[self.wordIndex].german);
+                    $('.character-container div').remove();
                     $('.exercise-button').html('Next');
                     self.resultData[self.data[self.wordIndex].wordId] = 0;
                     console.log(self.resultData);
+
+                    //rendering content
+                    $(".content-container > p.content").text(self.data[self.wordIndex].context);
                 }
             });
         };
-        this.shuffleArray = function(array){
+        this.shuffleArray = function(array)
+        {
                 var counter = array.length, temp, index;
 
                 // While there are elements in the array
-                while (counter > 0) {
+                while (counter > 0)
+                {
                     // Pick a random index
                     index = Math.floor(Math.random() * counter);
 
@@ -188,8 +204,10 @@ use yii\helpers\Url;
                 }
                 return array;
         };
-        this.ajaxPassResultData = function(){
-            $.ajax({
+        this.ajaxPassResultData = function()
+        {
+            $.ajax(
+            {
                 type: "POST",
                 url: "/exercise/ajaxx",
                 data:
@@ -210,6 +228,7 @@ use yii\helpers\Url;
     var training = new wordType(<?php echo json_encode($wordsToType, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT)?>);
     training.init();
     training.submitDataKey();
+    training.submitDataClick();
     training.changeWord();
 
 </script>

@@ -1,0 +1,59 @@
+html, body, .main-container, .word {
+    display: block;
+}
+
+.left-block, .right-block {
+    display: block;
+    overflow: hidden;
+    float: left;
+    width: 50%;
+    min-height: 220px;
+    border: 1px dotted grey;
+}
+
+.list-words-container ul li {
+    display: block;
+    list-style-type: none;
+}
+
+.word-container span {
+    font-weight: bold;
+    font-size: 250%;
+    color: #0000aa;
+}
+
+/*
+styles for exercise Type Word
+*/
+
+.word-container, .input-container, .content-container
+{
+    display: block;
+    padding: 10px 0px;
+    margin: 10px 0px;
+    position: relative;
+    height: auto;
+}
+
+.character-container
+{
+    display: block;
+    width: 100%;
+}
+
+.character-container div
+{
+    display: block;
+    float: left;
+    width: 50px;
+    height: 50px;
+    overflow: hidden;
+    border: 1px dashed grey;
+}
+
+#answerContainer, .exercise-button
+{
+    position: relative;
+    display: block;
+}
+
